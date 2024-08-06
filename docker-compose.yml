@@ -1,0 +1,21 @@
+services:
+  database:
+    image: postgres:12
+    environment:
+      POSTGRES_USER: pg
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: crud
+    ports:
+      - 5432:5432
+    networks:
+      - crud-network
+  redis:
+    image: "bitnami/redis:latest"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - crud-network
+
+networks:
+  crud-network:
+    driver: bridge
