@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/evertonbzr/microservice_golang_poc/internal/model"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -28,6 +29,42 @@ func Start(cfg *APIConfig) {
 	app.Use(requestid.New())
 	app.Use(logger.New())
 	app.Use(recover.New())
+
+	app.Route("/todos", func(r fiber.Router) {
+		r.Get("/", func(c *fiber.Ctx) error {
+			todos := []model.Todo{}
+
+			if err := cfg.DB.Find(&todos).Error; err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": err.Error(),
+				})
+			}
+
+			return c.JSON(fiber.Map{
+				"todos": todos,
+			})
+		})
+
+		r.Post("/", func(c *fiber.Ctx) error {
+			todo := new(model.Todo)
+
+			if err := c.BodyParser(todo); err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+					"error": err.Error(),
+				})
+			}
+
+			if err := cfg.DB.Create(todo).Error; err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": err.Error(),
+				})
+			}
+
+			return c.JSON(fiber.Map{
+				"todo": todo,
+			})
+		})
+	})
 
 	srv := fasthttp.Server{
 		Handler: app.Handler(),
